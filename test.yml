@@ -1,0 +1,8 @@
+---
+- name: Wazuh Test Response
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Test execution
+      debug:
+        msg: "Triggered from Wazuh"
