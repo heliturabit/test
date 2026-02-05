@@ -8,17 +8,33 @@
         name: FS-SMB1
         state: absent
 
-    - name: Ensure Windows Firewall is enabled
-      win_firewall:
-        state: enabled
-        profiles:
-          - Domain
-          - Private
-          - Public
+    - name: Enable Windows Firewall for Domain profile
+      win_firewall_rule:
+        name: "Domain Profile"
+        direction: in
+        action: allow
+        profile: Domain
+        enabled: yes
 
-    - name: Enforce minimum password length
-      win_user:
-        name: Administrator
-        password_never_expires: no
-        password_complexity: yes
+    - name: Enable Windows Firewall for Private profile
+      win_firewall_rule:
+        name: "Private Profile"
+        direction: in
+        action: allow
+        profile: Private
+        enabled: yes
+
+    - name: Enable Windows Firewall for Public profile
+      win_firewall_rule:
+        name: "Public Profile"
+        direction: in
+        action: allow
+        profile: Public
+        enabled: yes
+
+    - name: Enforce password complexity for Administrator
+      win_password_policy:
+        complexity: yes
+        minimum_length: 14
+        history_size: 24
 
