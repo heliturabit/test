@@ -1,20 +1,31 @@
----
 - name: Disable risky Windows services
   hosts: all
   gather_facts: yes
   tasks:
-    - name: Stop and disable Telnet service
+
+    - name: Stop and disable Telnet service if installed
       win_service:
         name: Telnet
         start_mode: disabled
         state: stopped
+      when: 
+        - "'Telnet' in ansible_facts.services | map(attribute='name') | list"
+      ignore_errors: yes
 
-    - name: Disable Guest account
+    - name: Disable Guest account if it exists
       win_user:
         name: Guest
         state: absent
+      ignore_errors: yes
 
     - name: Disable RDP if not required
       win_feature:
         name: Remote-Desktop-Services
         state: absent
+      register: rdp_feature
+      ignore_errors: yes
+
+    - name: Check if RDP feature removal succeeded
+      debug:
+        msg: "RDP removal: {{ rdp_feature }}"
+
