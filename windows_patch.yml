@@ -1,0 +1,16 @@
+---
+- name: Patch Windows Agent
+  hosts: all
+  gather_facts: yes
+  tasks:
+    - name: Install Security & Critical Updates
+      win_updates:
+        category_names:
+          - SecurityUpdates
+          - CriticalUpdates
+        reboot: yes
+      register: update_result
+
+    - name: Log result
+      debug:
+        msg: "Updates installed: {{ update_result.updates | map(attribute='title') | list }}"

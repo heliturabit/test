@@ -1,0 +1,20 @@
+---
+- name: Disable risky Windows services
+  hosts: all
+  gather_facts: yes
+  tasks:
+    - name: Stop and disable Telnet service
+      win_service:
+        name: Telnet
+        start_mode: disabled
+        state: stopped
+
+    - name: Disable Guest account
+      win_user:
+        name: Guest
+        state: absent
+
+    - name: Disable RDP if not required
+      win_feature:
+        name: Remote-Desktop-Services
+        state: absent

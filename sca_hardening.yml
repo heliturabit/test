@@ -1,0 +1,20 @@
+---
+- name: Apply Windows SCA Hardening
+  hosts: all
+  gather_facts: yes
+  tasks:
+    - name: Disable SMBv1
+      win_feature:
+        name: FS-SMB1
+        state: absent
+
+    - name: Ensure Windows Firewall is enabled
+      win_firewall_rule:
+        name: "AllProfiles"
+        enabled: yes
+
+    - name: Enforce minimum password length
+      win_user:
+        name: Administrator
+        password_never_expires: no
+        password_complexity: yes
