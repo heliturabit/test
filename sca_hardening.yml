@@ -8,29 +8,19 @@
         name: FS-SMB1
         state: absent
 
-    - name: Enable Windows Firewall for Domain profile
-      win_firewall_rule:
-        name: "Domain Profile"
-        direction: in
-        action: allow
-        profile: Domain
-        enabled: yes
+    - name: Enable Windows Firewall for all profiles
+      win_shell: |
+        Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled True
+      args:
+        executable: powershell
+      register: firewall_result
 
-    - name: Enable Windows Firewall for Private profile
-      win_firewall_rule:
-        name: "Private Profile"
-        direction: in
-        action: allow
-        profile: Private
-        enabled: yes
-
-    - name: Enable Windows Firewall for Public profile
-      win_firewall_rule:
-        name: "Public Profile"
-        direction: in
-        action: allow
-        profile: Public
-        enabled: yes
+    - name: Verify Windows Firewall status
+      win_shell: |
+        Get-NetFirewallProfile | Select-Object Name,Enabled
+      args:
+        executable: powershell
+      register: firewall_status
 
     - name: Enforce password complexity for Administrator
       win_password_policy:
