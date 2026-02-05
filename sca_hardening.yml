@@ -1,21 +1,57 @@
----
 - name: Apply Windows SCA Hardening
   hosts: all
   gather_facts: yes
+  vars:
+    winrm_timeout: 600  # avoid WSMan timeout for long scans
   tasks:
+
+    # -------------------------------
+    # Disable SMBv1
+    # -------------------------------
     - name: Disable SMBv1
       win_feature:
         name: FS-SMB1
         state: absent
 
-    - name: Ensure Windows Firewall is enabled
-      win_firewall_rule:
-        name: "AllProfiles"
-        enabled: yes
+    # -------------------------------
+    # Ensure Windows Firewall is enabled
+    # -------------------------------
+    - name: Enable Windows Firewall for all profiles
+      win_firewall:
+        state: enabled
 
-    - name: Enforce minimum password length
+    # -------------------------------
+    # Enforce minimum password length and complexity
+    # -------------------------------
+    - name: Enforce password policy for Administrator
       win_user:
         name: Administrator
         password_never_expires: no
         password_complexity: yes
+
+    # -------------------------------
+    # Run antivirus scan (Defender or Checkpoint)
+    # -------------------------------
+    - name: Check active antivirus products
+      win_shell: |
+        Get-CimInstance -Namespace root\SecurityCenter2 -ClassName AntiVirusProduct | 
+        Select-Object displayName, productState | ConvertTo-Json
+      register: av_status
+
+    - name: Run Windows Defender scan if active
+      win_shell: Start-MpScan -ScanType Quick
+      when: >
+        av_status.stdout | from_json |
+        selectattr('displayName','equalto','Windows Defender') |
+        selectattr('productState','equalto',266240) | list | length > 0
+      ignore_errors: yes  # avoid failing playbook if scan fails
+
+    - name: Run Checkpoint AV scan if active
+      win_shell: |
+        $cpScan = "C:\Program Files (x86)\CheckPoint\Endpoint Security\Threat Emulation\ScanTool.exe"
+        if (Test-Path $cpScan) { & $cpScan -FullScan }
+      when: >
+        av_status.stdout | from_json |
+        selectattr('displayName','equalto','Checkpoint ThreatEmulation and Antivirus') | list | length > 0
+      ignore_errors: yes
 
